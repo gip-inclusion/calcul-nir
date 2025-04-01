@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="fr">
+    <!-- Lire le code de ce genre d’outils est une très bonne précaution 👍. -->
+    <!-- https://github.com/gip-inclusion/calcul-nir/ -->
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="description" content="Utilitaire de calcul de la clé NIR (numéro de sécurité sociale) à partir des 13 chiffres le composant.">
+        <meta name="keywords" content="clé,nir,numéro sécurité sociale">
+        <title>Calcul de clé NIR</title>
+        <style>
+body {
+    background: #ccc;
+    color: #333;
+    margin: 30px auto;
+    max-width: 80ch;
+}
+h2 { margin-top: 50px; }
+table { border-spacing: 0 15px; }
+caption { text-align: left; }
+th {
+    text-align: left;
+    padding-right: 20px;
+}
+input { margin: 10px 0; }
+b { color: #000; }
+@media (prefers-color-scheme: dark) {
+    body {
+        background: #333;
+        color: #ccc;
+    }
+    b { color: #fff; }
+    a:link { color: #58a6ff; }
+    a:visited { color: #8e96f0; }
+}
+        </style>
+    </head>
+    <body>
+        <noscript>
+            <i>
+            Ce site n’envoie pas les données de formulaire, il requiert
+            JavaScript pour effectuer les calculs dans le navigateur.
+            </i>
+        </noscript>
+        <div role="main">
+            <h1>Calcul de clé NIR</h1>
+            <p>Ce site n'envoie pas les données de formulaire, il utilise
+            JavaScript pour effectuer les calculs dans votre navigateur. Il
+            n'enregistre d'ailleurs rien dans votre historique et donc aucune
+            trace n'est visible, même sur votre machine.</p>
+            <label>
+                Entrez les treize premiers chiffres du NIR :
+                <div>
+                    <input id="nir" autocomplete="off">
+                </div>
+            </label>
+            <p><b>Clé NIR : <span id="nir-key"></span></b></p>
+            <p id="error"></p>
+            <h2>Signification des chiffres du NIR</h2>
+            <table>
+                <caption>Pour une personne née en France :</caption>
+                <thead>
+                <tr>
+                    <th scope="col">Position</th>
+                    <th scope="col">Signification</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td>1</td>
+                    <td>Sexe</td>
+                </tr>
+                <tr>
+                    <td>2–3</td>
+                    <td>Deux derniers chiffres de l’année de naissance</td>
+                </tr>
+                <tr>
+                    <td>4–5</td>
+                    <td>Mois de naissance</td>
+                </tr>
+                <tr>
+                    <td>6–7</td>
+                    <td>Département de naissance (2A ou 2B pour la Corse)</td>
+                </tr>
+                <tr>
+                    <td>8–10</td>
+                    <td>Code officiel de la commune de naissance</td>
+                </tr>
+                <tr>
+                    <td>11–13</td>
+                    <td>Numéro d’ordre de naissance dans le mois et la commune</td>
+                </tr>
+                <tr>
+                    <td>14–15</td>
+                    <td>Clé de contrôle</td>
+                </tr>
+                </tbody>
+            </table>
+            <p>
+            Plus de détails sur la
+            <a href="https://fr.wikipedia.org/wiki/Num%C3%A9ro_de_s%C3%A9curit%C3%A9_sociale_en_France#Signification_des_chiffres_du_NIR"
+                target="_blank" rel="noopener noreferrer nofollow">page Wikipédia de la sécurité sociale</a>.
+
+            </p>
+        </div>
+
+        <script>
+            "use strict";
+            (function() {
+                function init() {
+                    const nirInput = document.getElementById("nir");
+                    const keyElement = document.getElementById("nir-key");
+                    const error = document.getElementById("error");
+
+                    function handleNirChange() {
+                        let errorMsg = "";
+                        let nirValue = nirInput.value.replaceAll(" ", "");
+                        if (nirValue.length === 13 || nirValue.length === 15) {
+                            let dpt = nirValue.slice(5, 7);
+                            if (dpt.toUpperCase() === "2A") {
+                                dpt = "19";
+                            } else if (dpt.toUpperCase() == "2B") {
+                                dpt = "18";
+                            }
+                            nirValue = nirValue.slice(0, 5) + dpt + nirValue.slice(7);
+                            if (/^[0-9]{13}/.test(nirValue)) {
+                                const key = 97 - parseInt(nirValue.slice(0, 13)) % 97;
+                                const keyStr = key.toString().padStart(2, "0");
+                                keyElement.textContent = keyStr
+                                if (nirValue.length === 15 && nirValue.slice(13,) !== keyStr) {
+                                    errorMsg = "La clé du NIR est invalide.";
+                                }
+                            } else {
+                                errorMsg = (
+                                    "Vérifiez que le NIR ne contient que des chiffres "
+                                    + "(ou 2A, 2B pour les départements de Corse)."
+                                );
+                            }
+                        } else {
+                            if (nirValue.length < 13) {
+                                errorMsg = `Il manque des chiffres (actuellement ${nirValue.length})`;
+                            }
+                            else if (nirValue.length > 13) {
+                                errorMsg = `Il y a trop de chiffres (actuellement ${nirValue.length})`;
+                            }
+                        }
+                        error.textContent = errorMsg;
+                        if (errorMsg) {
+                            keyElement.textContent = "";
+                            nirInput.setAttribute("aria-invalid", "true");
+                            nirInput.setAttribute("aria-errormessage", "error");
+                        } else {
+                            nirInput.setAttribute("aria-invalid", "false");
+                            nirInput.removeAttribute("aria-errormessage");
+                        }
+                    }
+
+                    nirInput.addEventListener("input", handleNirChange);
+                    handleNirChange();
+                }
+
+                if (document.readyState === "loading") {
+                    document.addEventListener("DOMContentLoaded", init);
+                } else {
+                    init();
+                }
+            })();
+        </script>
+    </body>
+</html>
