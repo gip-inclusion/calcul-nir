@@ -53,8 +53,11 @@ b { color: #000; }
                 <div>
                     <input id="nir" autocomplete="off">
                 </div>
+                Ou les choisir aléatoirement :
+                <button id="generate">Générer</button>
             </label>
             <p><b>Clé NIR : <span id="nir-key"></span></b></p>
+            <p><b>NIR : <span id="full-nir"></span></b></p>
             <p id="error"></p>
             <h2>Signification des chiffres du NIR</h2>
             <table>
@@ -109,8 +112,10 @@ b { color: #000; }
             (function() {
                 function init() {
                     const nirInput = document.getElementById("nir");
+                    const nirOutput = document.getElementById("full-nir");
                     const keyElement = document.getElementById("nir-key");
                     const error = document.getElementById("error");
+                    const generate = document.getElementById("generate");
 
                     function handleNirChange() {
                         let errorMsg = "";
@@ -127,6 +132,7 @@ b { color: #000; }
                                 const key = 97 - parseInt(nirValue.slice(0, 13)) % 97;
                                 const keyStr = key.toString().padStart(2, "0");
                                 keyElement.textContent = keyStr
+                                nirOutput.textContent = `${nirValue}${keyStr}`
                                 if (nirValue.length === 15 && nirValue.slice(13,) !== keyStr) {
                                     errorMsg = "La clé du NIR est invalide.";
                                 }
@@ -155,8 +161,35 @@ b { color: #000; }
                         }
                     }
 
+                    function getRandomInt(min, max) {
+                        const plafondMinimum = Math.ceil(min);
+                        const plancherMaximum = Math.floor(max) + 1;
+                        return Math.floor(Math.random() * (plancherMaximum - plafondMinimum) + plafondMinimum);
+                    }
+
+                    function left_pad(num, len) {
+                        return num.toString().padStart(len, "0");
+                    }
+
+                    function random_choice(arr) {
+                        return arr[Math.floor(Math.random() * arr.length)];
+                    }
+
+                    function handleGenerateClick() {
+                        const sex = random_choice([1, 2, 3, 4, 7, 8]);
+                        const year = random_choice([getRandomInt(50, 99), getRandomInt(0, 9)]);
+                        const month = getRandomInt(1, 12);
+                        const dept = getRandomInt(1, 99);
+                        const commune = getRandomInt(1, 999);
+                        const birth_order = getRandomInt(1, 999);
+                        nirInput.value = `${sex}${left_pad(year, 2)}${left_pad(month, 2)}${left_pad(dept, 2)}${left_pad(commune, 3)}${left_pad(birth_order, 3)}`;
+                        handleNirChange();
+                    }
+
                     nirInput.addEventListener("input", handleNirChange);
                     handleNirChange();
+
+                    generate.addEventListener("click", handleGenerateClick);
                 }
 
                 if (document.readyState === "loading") {
